@@ -1,3 +1,4 @@
+//Version: 1.1
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_qr_bar_scanner/qr_bar_scanner_camera.dart'; //Internetlink: https://pub.dev/packages/flutter_qr_bar_scanner (MIT)
@@ -15,9 +16,9 @@ class MyApp extends StatelessWidget {
       title: 'GroRescue_V1',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        primarySwatch: Colors.red,
       ),
-      home: MyHomePage(title: 'GroRescue_V1'),
+      home: MyHomePage(title: 'GroRescue_V1.1'),
     );
   }
 }
@@ -38,42 +39,28 @@ class _MyHomePageState extends State<MyHomePage> {
     return response;
   }
 
-  Widget buildProduct0 (){
+  Widget buildProduct (){
     return FutureBuilder<http.Response>(
       future: product(),
       builder: (context,snapshot) {
         if (snapshot.hasData){
           int statusCode = snapshot.data!.statusCode;
           if (statusCode == 200){
-            if (info.fromJson(jsonDecode(snapshot.data!.body)).keyword0 != null){
-              return Text("Die Marke: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword0}\n");
+            if (status.fromJson(jsonDecode(snapshot.data!.body)).jsonstatus == 1){
+              if (info.fromJson(jsonDecode(snapshot.data!.body)).keyword2 != "Kein Ergebnis"){
+                return Text("Dein Code: $_qrInfo\n\n"
+                    "Die Marke: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword0}\n\n "
+                    "Stichwort: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword1}\n\n "
+                    "Dein Produkt: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword2}");
+              }
+              else {
+                return Text("Dein Code: $_qrInfo\n\n"
+                    "Die Marke: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword0}\n\n "
+                    "Stichwort: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword1}");
+              }
             }
             else {
-              return Text("Kein Ergebnis\n");
-            }
-          }
-          return Text('$statusCode');
-        }
-        else if (snapshot.hasError){
-          return Text("${snapshot.error}");
-        }
-        return CircularProgressIndicator();
-      },
-    );
-  }
-
-  Widget buildProduct1 (){
-    return FutureBuilder<http.Response>(
-      future: product(),
-      builder: (context,snapshot) {
-        if (snapshot.hasData){
-          int statusCode = snapshot.data!.statusCode;
-          if (statusCode == 200){
-            if (info.fromJson(jsonDecode(snapshot.data!.body)).keyword1 != null){
-              return Text("Stichwort: ${info.fromJson(jsonDecode(snapshot.data!.body)).keyword1}\n");
-            }
-            else {
-              return Text("Kein Ergebnis\n");
+              return Text("Dein Code '$_qrInfo' ergab kein Ergebnis!");
             }
           }
           return Text('$statusCode');
@@ -143,14 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Container(
-                        child: Text('Dein Code: $_qrInfo\n'),
-                      ),
-                      Container(
-                        child: buildProduct0(),
+                        child: buildProduct(),
                         ),
-                      Container(
-                        child: buildProduct1(),
-                      )
                     ],
                   )
               )
@@ -160,14 +141,26 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+class status {
+  final int jsonstatus;
+  status({required this.jsonstatus});
+  factory status.fromJson (Map<String, dynamic> json) {
+    return status(
+      jsonstatus: json['status'],
+    );
+  }
+}
+
 class info {
   final String? keyword0;
   final String? keyword1;
-  info({required this.keyword0, required this.keyword1});
+  final String? keyword2;
+  info({required this.keyword0, required this.keyword1, required this.keyword2});
   factory info.fromJson (Map<String, dynamic> json) {
     return info(
-      keyword0: json['product']['brands'],
-      keyword1: json['product']['_keywords'][0],
+      keyword0: json['product']['brands'] ?? ("Kein Ergebnis!"),
+      keyword1: json['product']['_keywords'][0] ?? ("Kein Ergebnis!"),
+      keyword2: json['product']['abbreviated_product_name'] ?? ("Kein Ergebnis!"),
     );
   }
 }
